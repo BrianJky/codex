@@ -1,0 +1,38 @@
+:root {
+  color-scheme: light;
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+  background-color: #f5f6f8;
+  color: #303133;
+}
+
+body,
+html,
+#app {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: #f5f6f8;
+}
+
+.app-container {
+  min-height: 100%;
+  padding: 24px;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.table-operations {
+  display: flex;
+  gap: 8px;
+}
+
+.status-tag {
+  text-transform: uppercase;
+}
