@@ -143,7 +143,7 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref } from 'vue'
+import { computed, reactive, ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
@@ -157,7 +157,9 @@ import {
   removeCopy,
   borrowCopy,
   returnCopy,
-  archiveCopy
+  archiveCopy,
+  ensureBooksLoaded,
+  resolveApiError
 } from '../store/libraryStore'
 
 const route = useRoute()
@@ -192,6 +194,16 @@ const copyForm = reactive({
 const borrowForm = reactive({
   borrower: '',
   borrowTime: ''
+})
+
+const handleRequestError = (error, fallback) => {
+  ElMessage.error(resolveApiError(error, fallback))
+}
+
+onMounted(() => {
+  ensureBooksLoaded().catch((error) => {
+    handleRequestError(error, '加载书籍数据失败')
+  })
 })
 
 const bookStatusText = (status) => BOOK_STATUS_TEXT[status] || '—'
@@ -243,7 +255,7 @@ const openCopyDialog = (mode, copy) => {
   copyDialogVisible.value = true
 }
 
-const saveCopy = () => {
+const saveCopy = async () => {
   if (!book.value) {
     copyDialogVisible.value = false
     return
@@ -263,19 +275,25 @@ const saveCopy = () => {
     status: copyForm.status
   }
 
-  if (copyDialogMode.value === 'create') {
-    const exists = book.value.copies.some((item) => item.id === payload.id)
-    if (exists) {
-      ElMessage.error('副本编号已存在')
-      return
+  try {
+    if (copyDialogMode.value === 'create') {
+      const exists = book.value.copies.some((item) => item.id === payload.id)
+      if (exists) {
+        ElMessage.error('副本编号已存在')
+        return
+      }
+      await addCopy(book.value.id, payload)
+      ElMessage.success('新增副本成功')
+    } else {
+      await updateCopy(book.value.id, currentCopyId.value, payload)
+      currentCopyId.value = payload.id
+      ElMessage.success('副本信息已更新')
     }
-    addCopy(book.value.id, payload)
-    ElMessage.success('新增副本成功')
-  } else {
-    updateCopy(book.value.id, currentCopyId.value, payload)
-    ElMessage.success('副本信息已更新')
+    copyDialogVisible.value = false
+  } catch (error) {
+    const message = copyDialogMode.value === 'create' ? '新增副本失败' : '更新副本失败'
+    handleRequestError(error, message)
   }
-  copyDialogVisible.value = false
 }
 
 const formatDateTime = (date = new Date()) => {
@@ -296,18 +314,26 @@ const openBorrowDialog = (copy) => {
   borrowDialogVisible.value = true
 }
 
-const confirmBorrow = () => {
+const confirmBorrow = async () => {
   if (!book.value) return
   if (!borrowForm.borrower) {
     ElMessage.warning('请填写借阅人')
     return
   }
-  borrowCopy(book.value.id, currentCopyId.value, {
-    borrower: borrowForm.borrower,
-    borrowTime: borrowForm.borrowTime
-  })
-  borrowDialogVisible.value = false
-  ElMessage.success('借出成功')
+  try {
+    await borrowCopy(book.value.id, currentCopyId.value, {
+      borrower: borrowForm.borrower,
+      borrowTime: borrowForm.borrowTime
+    })
+    borrowDialogVisible.value = false
+    if (recordsDialogVisible.value && selectedCopyId.value === currentCopyId.value) {
+      const latest = book.value?.copies.find((item) => item.id === currentCopyId.value)
+      borrowRecords.value = latest?.borrowRecords.length ? latest.borrowRecords.slice().reverse() : []
+    }
+    ElMessage.success('借出成功')
+  } catch (error) {
+    handleRequestError(error, '借出副本失败')
+  }
 }
 
 const handleReturn = (copy) => {
@@ -317,17 +343,29 @@ const handleReturn = (copy) => {
     cancelButtonText: '取消',
     type: 'warning'
   })
-    .then(() => {
-      returnCopy(book.value.id, copy.id)
-      ElMessage.success('副本已归还')
+    .then(async () => {
+      try {
+        await returnCopy(book.value.id, copy.id)
+        if (recordsDialogVisible.value && selectedCopyId.value === copy.id) {
+          const latest = book.value?.copies.find((item) => item.id === copy.id)
+          borrowRecords.value = latest?.borrowRecords.length ? latest.borrowRecords.slice().reverse() : []
+        }
+        ElMessage.success('副本已归还')
+      } catch (error) {
+        handleRequestError(error, '归还副本失败')
+      }
     })
     .catch(() => {})
 }
 
-const archive = (copy) => {
+const archive = async (copy) => {
   if (!book.value) return
-  archiveCopy(book.value.id, copy.id)
-  ElMessage.success('副本已归档，可供借阅')
+  try {
+    await archiveCopy(book.value.id, copy.id)
+    ElMessage.success('副本已归档，可供借阅')
+  } catch (error) {
+    handleRequestError(error, '归档副本失败')
+  }
 }
 
 const removeCopyItem = (copy) => {
@@ -337,9 +375,13 @@ const removeCopyItem = (copy) => {
     cancelButtonText: '取消',
     type: 'warning'
   })
-    .then(() => {
-      removeCopy(book.value.id, copy.id)
-      ElMessage.success('副本已删除')
+    .then(async () => {
+      try {
+        await removeCopy(book.value.id, copy.id)
+        ElMessage.success('副本已删除')
+      } catch (error) {
+        handleRequestError(error, '删除副本失败')
+      }
     })
     .catch(() => {})
 }
