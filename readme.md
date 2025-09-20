@@ -14,14 +14,22 @@
 
 ```bash
 pnpm install
+
+# 启动后端接口服务（默认端口 3000）
+pnpm server
+
+# 另开一个终端启动前端
 pnpm dev
 ```
 
-默认会在 http://localhost:5173 启动 Vite 开发服务器。
+默认会在 http://localhost:5173 启动 Vite 开发服务器，前端通过 `http://localhost:3000/api` 访问后端。
 
 ### 项目结构
 
 - `src/views/BookList.vue`：书籍列表与维护操作。
 - `src/views/CopyDetails.vue`：书籍副本管理与借阅记录。
-- `src/store/libraryStore.js`：前端内存状态及示例数据。
+- `src/store/libraryStore.js`：与后端接口交互的状态管理封装。
+- `server/index.js`：基于 Express 的后端入口，提供图书与副本 REST 接口。
+- `server/libraryService.js`：后端数据读写与业务逻辑实现。
+- `server/data/library.json`：初始数据及简单的 JSON 数据库。
 - `src/router/index.js`：前端路由配置。

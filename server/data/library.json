@@ -1,0 +1,134 @@
+{
+  "books": [
+    {
+      "id": "B2023-001",
+      "name": "Vue 3 实战指南",
+      "author": "张伟",
+      "publisher": "电子工业出版社",
+      "publishDate": "2023-04-02",
+      "price": 88,
+      "pages": 432,
+      "isbn": "9787121428854",
+      "quantity": 3,
+      "entryDate": "2023-04-16",
+      "borrowCount": 26,
+      "status": "normal",
+      "copies": [
+        {
+          "id": "B2023-001-01",
+          "location": "一楼 A 区 01 架",
+          "status": "available",
+          "borrowCount": 12,
+          "borrowRecords": [
+            {
+              "borrower": "李雷",
+              "borrowTime": "2023-05-01 10:00",
+              "returnTime": "2023-05-21 14:30"
+            },
+            {
+              "borrower": "韩梅梅",
+              "borrowTime": "2023-07-18 09:30",
+              "returnTime": "2023-08-02 16:20"
+            }
+          ]
+        },
+        {
+          "id": "B2023-001-02",
+          "location": "一楼 A 区 01 架",
+          "status": "borrowed",
+          "borrowCount": 9,
+          "borrowRecords": [
+            {
+              "borrower": "王芳",
+              "borrowTime": "2023-09-06 11:10",
+              "returnTime": "2023-09-28 18:40"
+            },
+            {
+              "borrower": "陈强",
+              "borrowTime": "2023-10-12 15:25",
+              "returnTime": ""
+            }
+          ]
+        },
+        {
+          "id": "B2023-001-03",
+          "location": "一楼 A 区 02 架",
+          "status": "pending",
+          "borrowCount": 5,
+          "borrowRecords": []
+        }
+      ]
+    },
+    {
+      "id": "B2022-035",
+      "name": "数据库系统概念",
+      "author": "Abraham Silberschatz",
+      "publisher": "机械工业出版社",
+      "publishDate": "2021-12-10",
+      "price": 128,
+      "pages": 900,
+      "isbn": "9787111658596",
+      "quantity": 2,
+      "entryDate": "2022-01-05",
+      "borrowCount": 48,
+      "status": "allBorrowed",
+      "copies": [
+        {
+          "id": "B2022-035-01",
+          "location": "二楼 B 区 11 架",
+          "status": "borrowed",
+          "borrowCount": 25,
+          "borrowRecords": [
+            {
+              "borrower": "赵云",
+              "borrowTime": "2023-08-15 13:15",
+              "returnTime": ""
+            }
+          ]
+        },
+        {
+          "id": "B2022-035-02",
+          "location": "二楼 B 区 11 架",
+          "status": "damaged",
+          "borrowCount": 23,
+          "borrowRecords": [
+            {
+              "borrower": "刘备",
+              "borrowTime": "2023-05-10 10:05",
+              "returnTime": "2023-05-30 09:50"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B2021-120",
+      "name": "Python 编程：从入门到实践",
+      "author": "埃里克·马瑟斯",
+      "publisher": "人民邮电出版社",
+      "publishDate": "2020-06-01",
+      "price": 89,
+      "pages": 632,
+      "isbn": "9787115533073",
+      "quantity": 1,
+      "entryDate": "2021-03-20",
+      "borrowCount": 54,
+      "status": "forbidden",
+      "copies": [
+        {
+          "id": "B2021-120-01",
+          "location": "二楼 C 区 03 架",
+          "status": "lost",
+          "borrowCount": 54,
+          "borrowRecords": [
+            {
+              "borrower": "周瑜",
+              "borrowTime": "2022-11-01 09:00",
+              "returnTime": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

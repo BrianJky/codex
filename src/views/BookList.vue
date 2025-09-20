@@ -8,7 +8,16 @@
       <el-button type="primary" @click="openCreateDialog">新增书籍</el-button>
     </div>
 
-    <el-table :data="books" border stripe style="width: 100%" height="100%">
+    <el-alert
+      v-if="errorMessage"
+      type="error"
+      :closable="false"
+      show-icon
+      class="page-alert"
+      :title="errorMessage"
+    />
+
+    <el-table :data="books" border stripe style="width: 100%" height="100%" v-loading="loading">
       <el-table-column prop="id" label="编号" width="140" fixed="left" />
       <el-table-column prop="name" label="名称" min-width="180" show-overflow-tooltip />
       <el-table-column prop="author" label="作者" min-width="140" show-overflow-tooltip />
@@ -101,6 +110,7 @@
       </template>
     </el-dialog>
   </div>
+  </div>
 </template>
 
 <script setup>
@@ -114,12 +124,14 @@ import {
   addBook,
   updateBook,
   removeBook,
-  updateBookBorrowStatus,
-  resetBookQuantities
+  fetchBooks,
+  resolveApiError
 } from '../store/libraryStore'
 
 const router = useRouter()
 const books = computed(() => libraryStore.books)
+const loading = computed(() => libraryStore.loading)
+const errorMessage = computed(() => libraryStore.error)
 
 const dialogVisible = ref(false)
 const dialogMode = ref('create')
@@ -149,8 +161,14 @@ const createEmptyForm = () => ({
 
 const bookForm = reactive(createEmptyForm())
 
+const handleRequestError = (error, fallback) => {
+  ElMessage.error(resolveApiError(error, fallback))
+}
+
 onMounted(() => {
-  resetBookQuantities()
+  fetchBooks().catch((error) => {
+    handleRequestError(error, '加载书籍数据失败')
+  })
 })
 
 const statusTagType = (status) => {
@@ -186,7 +204,7 @@ const openEditDialog = (book) => {
   dialogVisible.value = true
 }
 
-const handleSubmit = () => {
+const handleSubmit = async () => {
   if (!bookForm.name) {
     ElMessage.warning('请填写书籍名称')
     return
@@ -206,36 +224,43 @@ const handleSubmit = () => {
     status: bookForm.status
   }
 
-  if (dialogMode.value === 'create') {
-    addBook({
-      ...payload,
-      quantity: 0,
-      borrowCount: 0,
-      status: payload.status,
-      copies: []
-    })
-    ElMessage.success('新增书籍成功')
-  } else {
-    updateBook(currentBookId.value, payload)
-    const target = libraryStore.books.find((item) => item.id === currentBookId.value)
-    if (target) {
-      updateBookBorrowStatus(target)
+  try {
+    if (dialogMode.value === 'create') {
+      await addBook({
+        ...payload,
+        quantity: 0,
+        borrowCount: 0,
+        status: payload.status,
+        copies: []
+      })
+      ElMessage.success('新增书籍成功')
+    } else {
+      const updated = await updateBook(currentBookId.value, payload)
+      currentBookId.value = updated.id
+      ElMessage.success('书籍信息已更新')
     }
-    ElMessage.success('书籍信息已更新')
+    dialogVisible.value = false
+  } catch (error) {
+    handleRequestError(error, '保存书籍失败')
   }
-
-  dialogVisible.value = false
 }
 
-const setForbidden = (book) => {
-  updateBook(book.id, { status: BOOK_STATUS.FORBIDDEN })
-  ElMessage.success('已设置为禁止借阅')
+const setForbidden = async (book) => {
+  try {
+    await updateBook(book.id, { status: BOOK_STATUS.FORBIDDEN })
+    ElMessage.success('已设置为禁止借阅')
+  } catch (error) {
+    handleRequestError(error, '更新书籍状态失败')
+  }
 }
 
-const restoreBook = (book) => {
-  updateBook(book.id, { status: BOOK_STATUS.NORMAL })
-  updateBookBorrowStatus(book)
-  ElMessage.success('已恢复借阅状态')
+const restoreBook = async (book) => {
+  try {
+    await updateBook(book.id, { status: BOOK_STATUS.NORMAL })
+    ElMessage.success('已恢复借阅状态')
+  } catch (error) {
+    handleRequestError(error, '更新书籍状态失败')
+  }
 }
 
 const remove = (book) => {
@@ -244,9 +269,13 @@ const remove = (book) => {
     cancelButtonText: '取消',
     type: 'warning'
   })
-    .then(() => {
-      removeBook(book.id)
-      ElMessage.success('书籍已删除')
+    .then(async () => {
+      try {
+        await removeBook(book.id)
+        ElMessage.success('书籍已删除')
+      } catch (error) {
+        handleRequestError(error, '删除书籍失败')
+      }
     })
     .catch(() => {})
 }
@@ -261,6 +290,10 @@ const viewCopies = (book) => {
   margin: 0;
   color: #909399;
   font-size: 14px;
+}
+
+.page-alert {
+  margin-bottom: 12px;
 }
 
 .book-form {
